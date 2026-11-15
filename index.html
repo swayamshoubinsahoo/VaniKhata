@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VaniKhata — Bolkar Hisaab, UPI Recovery & Kaam Bridge</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', sans-serif;
+      background-color: #070a12;
+      color: #f8fafc;
+      margin: 0;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(17, 24, 39, 0.9) 0%, rgba(11, 15, 25, 0.96) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.6);
+    }
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.6); }
+      70% { box-shadow: 0 0 0 26px rgba(249, 115, 22, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+    }
+    .mic-listening {
+      animation: pulseGlow 1.3s infinite;
+      background: linear-gradient(135deg, #ef4444, #f97316) !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col md:flex-row antialiased selection:bg-orange-500 selection:text-white">
+
+  <!-- FIXED-WIDTH LEFT SIDEBAR -->
+  <aside class="w-full md:w-72 md:min-h-screen bg-[#0a0e1a] border-b md:border-b-0 md:border-r border-slate-800 p-5 flex flex-col justify-between shrink-0">
+    <div class="space-y-7">
+      <!-- BRAND -->
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-500/25 shrink-0">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold tracking-tight text-white">Vani<span class="text-orange-400">Khata</span></h1>
+          <p class="text-[11px] text-slate-400 font-medium">वाणीखाता • Bolkar Hisaab</p>
+        </div>
+      </div>
+
+      <!-- NAVIGATION TABS -->
+      <nav class="flex flex-wrap md:flex-col gap-2">
+        <button id="nav-voice" onclick="showPage('voice')" class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold bg-gradient-to-r from-orange-500/20 to-amber-500/10 text-orange-400 border border-orange-500/30 transition cursor-pointer">
+          <span class="flex items-center gap-3"><span>🎙️</span><span>Voice Munim</span></span>
+        </button>
+
+        <button id="nav-udhaar" onclick="showPage('udhaar')" class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold text-slate-400 hover:bg-slate-900 hover:text-white transition cursor-pointer">
+          <span class="flex items-center gap-3"><span>📒</span><span>Udhaar & UPI</span></span>
+          <span id="badgePending" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300">3</span>
+        </button>
+
+        <button id="nav-stock" onclick="showPage('stock')" class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold text-slate-400 hover:bg-slate-900 hover:text-white transition cursor-pointer">
+          <span class="flex items-center gap-3"><span>📦</span><span>Milk & Team</span></span>
+          <span id="badgeOrders" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300">2</span>
+        </button>
+
+        <button id="nav-labor" onclick="showPage('labor')" class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold text-slate-400 hover:bg-slate-900 hover:text-white transition cursor-pointer">
+          <span class="flex items-center gap-3"><span>👷</span><span>Kaam & Mazdoor</span></span>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">5 km</span>
+        </button>
+
+        <button id="nav-channels" onclick="showPage('channels')" class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold text-slate-400 hover:bg-slate-900 hover:text-white transition cursor-pointer">
+          <span class="flex items-center gap-3"><span>📞</span><span>WhatsApp & Call</span></span>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300">Free</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- CLEAN SHOPKEEPER STATUS CARD -->
+    <div class="hidden md:block pt-6 border-t border-slate-800/80">
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 space-y-1.5">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-slate-400">My Shop</span>
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        </div>
+        <p class="text-xs font-bold text-white">Maa Tara Tea & Kirana</p>
+        <p class="text-[11px] text-emerald-400 font-medium">✓ Hisaab Surakshit (Safe)</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- RIGHT MAIN CONTENT AREA -->
+  <div class="flex-1 flex flex-col min-w-0">
+
+    <!-- TOP BAR -->
+    <header class="h-16 px-6 border-b border-slate-800/80 bg-[#070a12]/90 backdrop-blur-md flex items-center justify-between shrink-0">
+      <div>
+        <h2 id="pageHeading" class="text-base font-bold text-white">Bolkar Hisaab Likhein</h2>
+        <p id="pageSubheading" class="text-xs text-slate-400 hidden sm:block">Zero English typing — speak in Hindi, Bengali, or Hinglish</p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <select id="langSelect" class="bg-slate-900 border border-slate-700 text-xs font-semibold text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-orange-500">
+          <option value="hi-IN">🇮🇳 हिन्दी / Hinglish</option>
+          <option value="bn-IN">🇮🇳 বাংলা (Bengali)</option>
+          <option value="en-IN">🇮🇳 English (India)</option>
+        </select>
+        <button onclick="exportCSV()" class="bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-xl border border-slate-700 transition cursor-pointer">
+          ↓ Download Hisaab
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN PAGES -->
+    <main class="flex-1 p-6 max-w-6xl w-full mx-auto">
+
+      <!-- PAGE 1: VOICE MUNIM -->
+      <section id="page-voice" class="space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div class="card rounded-3xl p-6">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Today's Cash & UPI</p>
+            <p id="statCollected" class="text-3xl font-extrabold text-white mt-2">₹1,420</p>
+            <p class="text-xs text-emerald-400 mt-1.5 font-medium">✓ Aaj Ki Kamai (Safe)</p>
+          </div>
+          <div onclick="showPage('udhaar')" class="card rounded-3xl p-6 cursor-pointer hover:border-orange-500/40 transition">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Pending Udhaar (Credit)</p>
+            <p id="statPending" class="text-3xl font-extrabold text-orange-400 mt-2">₹245</p>
+            <p id="statPendingSub" class="text-xs text-slate-400 mt-1.5">3 customers • Click to collect →</p>
+          </div>
+          <div onclick="showPage('stock')" class="card rounded-3xl p-6 cursor-pointer hover:border-blue-500/40 transition">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Morning Milk & Supplies</p>
+            <p id="statOrders" class="text-3xl font-extrabold text-blue-400 mt-2">2 Orders</p>
+            <p class="text-xs text-slate-400 mt-1.5">Ready for 6:00 AM delivery →</p>
+          </div>
+        </div>
+
+        <div class="card rounded-3xl p-8 border-orange-500/20 text-center space-y-5">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-xs font-semibold text-emerald-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            Works in Loud Street Noise • Wet-Hands & Earphone Ready
+          </div>
+
+          <div class="flex flex-col items-center space-y-3">
+            <!-- SPACIOUS FIXED BOLKAR LIKHEIN BUTTON -->
+            <button id="micBtn" onclick="toggleVoice()" class="w-28 h-28 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-white flex flex-col items-center justify-center p-3 shadow-2xl shadow-orange-500/35 transition transform hover:scale-105 active:scale-95 cursor-pointer">
+              <svg class="w-9 h-9 mb-1 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+              </svg>
+              <span id="micLabel" class="text-[10px] font-extrabold uppercase tracking-wider leading-tight text-center">Bolkar<br>Likhein</span>
+            </button>
+            <div>
+              <h3 class="text-xl font-extrabold text-white">Tap Mic & Speak Your Order or Udhaar</h3>
+              <p class="text-xs text-slate-400 mt-1">Say: <span class="text-slate-200 font-semibold">"रमेश के 40 रुपये उधार लिख दो और 20 पैकेट दूध ऑर्डर करो"</span></p>
+            </div>
+          </div>
+
+          <div class="max-w-2xl mx-auto flex flex-col sm:flex-row gap-3">
+            <input id="cmdInput" type="text" onkeydown="if(event.key==='Enter') runManualInput()" placeholder="Speak or type in Hindi / Bengali / Hinglish..." class="flex-1 bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-orange-500" />
+            <button onclick="runManualInput()" class="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-white font-bold text-sm px-6 py-3 rounded-2xl shadow-lg transition cursor-pointer">
+              Likhein ⚡
+            </button>
+          </div>
+
+          <div class="flex flex-wrap justify-center gap-2 text-xs">
+            <button onclick="runSample('रमेश के 40 रुपये उधार लिख दो और 20 पैकेट दूध ऑर्डर करो')" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 transition cursor-pointer">
+              ☕ "रमेश के ₹40 उधार + 20 पैकेट दूध"
+            </button>
+            <button onclick="runSample('Suresh ne 60 rupaye jama kar diye')" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 transition cursor-pointer">
+              ✅ "Suresh ne ₹60 jama kar diye"
+            </button>
+            <button onclick="runSample('Chotu ko 2 baje lunch break aur counter shift assign karo')" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 transition cursor-pointer">
+              👥 "Co-worker shift & break assign"
+            </button>
+          </div>
+
+          <div id="feedbackBanner" class="hidden max-w-2xl mx-auto rounded-2xl bg-emerald-950/80 border border-emerald-500/40 p-3.5 text-xs text-emerald-200 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-left">
+              <span class="text-base">🔊</span>
+              <span id="feedbackMsg" class="font-semibold"></span>
+            </div>
+            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Saved</span>
+          </div>
+        </div>
+
+        <div class="card rounded-3xl p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold text-white">Aaj Ke Taaza Hisaab (Recent Entries)</h4>
+            <button onclick="showPage('udhaar')" class="text-xs font-semibold text-orange-400 hover:underline cursor-pointer">Poora Khata & UPI QR Dekhein →</button>
+          </div>
+          <div id="recentFeed" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+        </div>
+      </section>
+
+      <!-- PAGE 2: UDHAAR & UPI -->
+      <section id="page-udhaar" class="hidden space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 class="text-xl font-extrabold text-white">Udhaar Khata & Evening UPI Payment</h3>
+            <p class="text-xs text-slate-400">Select any customer to show a UPI QR code or send a polite WhatsApp payment link</p>
+          </div>
+          <button onclick="bulkEveningReminder()" class="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-lg transition cursor-pointer">
+            📲 Send Evening UPI Link to All Pending
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div class="lg:col-span-7 card rounded-3xl p-6 space-y-4">
+            <input id="searchBox" oninput="renderUdhaarPage()" type="text" placeholder="Search customer name..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500" />
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <th class="py-3 px-3">Customer</th>
+                    <th class="py-3 px-3">Items</th>
+                    <th class="py-3 px-3">Amount</th>
+                    <th class="py-3 px-3">Status</th>
+                    <th class="py-3 px-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="udhaarTable" class="divide-y divide-slate-800/60 text-sm"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="lg:col-span-5 card rounded-3xl p-6 border-emerald-500/25 space-y-5">
+            <div class="flex items-center justify-between">
+              <h4 class="text-base font-bold text-white">Polite Evening UPI Link</h4>
+              <span id="qrDueBadge" class="text-xs font-extrabold px-3 py-1 rounded-full bg-orange-500/15 text-orange-400 border border-orange-500/30">₹60 Due</span>
+            </div>
+
+            <div class="flex flex-col items-center bg-slate-950/90 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <div class="bg-white p-3 rounded-2xl shadow-lg"><div id="qrBox"></div></div>
+              <div class="text-center">
+                <p id="qrCustName" class="text-base font-extrabold text-white">Suresh (Auto Driver)</p>
+                <p class="text-xs text-emerald-400 mt-0.5">Scan with GPay, PhonePe, Paytm or BHIM</p>
+              </div>
+              <textarea id="waText" rows="3" readonly class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 leading-relaxed focus:outline-none"></textarea>
+              <div class="grid grid-cols-2 gap-3 w-full">
+                <a id="waBtn" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-3 px-4 rounded-xl text-center transition cursor-pointer">
+                  Send WhatsApp ↗
+                </a>
+                <button onclick="markCurrentPaid()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-3 px-4 rounded-xl transition cursor-pointer">
+                  ✓ Mark Paid
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 3: MILK & TEAM -->
+      <section id="page-stock" class="hidden space-y-6">
+        <div>
+          <h3 class="text-xl font-extrabold text-white">Morning Supplier Orders & Co-Worker Shift Board</h3>
+          <p class="text-xs text-slate-400">Morning milk & grocery orders triggered by voice + stress-free small-team shift management</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="card rounded-3xl p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <h4 class="text-base font-bold text-white">🚚 Morning Milk & Supply Orders</h4>
+              <span class="text-xs text-emerald-400 font-semibold">Auto-Sent</span>
+            </div>
+            <div id="ordersContainer" class="space-y-3"></div>
+          </div>
+
+          <div class="card rounded-3xl p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <h4 class="text-base font-bold text-white">👥 Small-Team Co-Worker Helper</h4>
+              <span class="text-xs text-blue-400 font-semibold">Easy Shifts</span>
+            </div>
+            <div id="teamContainer" class="space-y-3"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 4: KAAM & MAZDOOR (LABOR BRIDGE) -->
+      <section id="page-labor" class="hidden space-y-6">
+        <div class="card rounded-3xl p-6 border-emerald-500/20 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          <div class="lg:col-span-5 space-y-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              "Kaam Nahi Hai" → Sidha Factory Kaam
+            </span>
+            <h3 class="text-2xl font-extrabold text-white">ShramikSetu Kaam Bridge</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Welders, masons, electricians & plumbers speak in their own language or upload a 15-sec work video. System finds factories within <strong class="text-white">5 km</strong>, locks daily wage safely so nobody cheats, and sends factory location on WhatsApp.
+            </p>
+          </div>
+
+          <div class="lg:col-span-7 bg-slate-950/90 border border-slate-800 rounded-2xl p-5 space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <input id="wName" type="text" placeholder="Worker Name (e.g., Manoj)" class="bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500" />
+              <select id="wTrade" class="bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500">
+                <option value="Arc & MIG Welder">🔧 Arc & MIG Welder</option>
+                <option value="Industrial Electrician">⚡ Industrial Electrician</option>
+                <option value="Civil Mason (Rajmistri)">🧱 Civil Mason (Rajmistri)</option>
+                <option value="Commercial Plumber">🚰 Commercial Plumber</option>
+              </select>
+              <label class="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 border border-dashed border-slate-600 rounded-xl px-3 py-2.5 text-xs text-slate-300 cursor-pointer">
+                <span>🎥 15s Work Video</span>
+                <input type="file" accept="video/*,image/*" class="hidden" onchange="onClipAttach(this)" />
+              </label>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <span id="clipLabel" class="text-xs text-slate-400">No English resume needed — voice or 15s video verified</span>
+              <button onclick="addWorkerMatch()" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-lg transition cursor-pointer">
+                Check Skill & Find Factory (5 km) ⚡
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="laborCards" class="grid grid-cols-1 md:grid-cols-3 gap-5"></div>
+      </section>
+
+      <!-- PAGE 5: WHATSAPP & PHONE CALL -->
+      <section id="page-channels" class="hidden space-y-6">
+        <div>
+          <h3 class="text-xl font-extrabold text-white">WhatsApp Voice Note & Free Phone Call Helper</h3>
+          <p class="text-xs text-slate-400">Works for shopkeepers & workers on basic smartphones or keypad feature phones without opening any app</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="card rounded-3xl p-6 space-y-4 border-emerald-500/25">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-2.5">
+                <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+                <h4 class="text-sm font-extrabold text-white">WhatsApp Khata Helper (+91 9800-KHATA)</h4>
+              </div>
+              <span class="text-[11px] text-emerald-400 font-semibold">● Instant Khata Update</span>
+            </div>
+            <div id="waChatLog" class="bg-slate-950/90 border border-slate-800 rounded-2xl p-4 h-56 overflow-y-auto space-y-3 text-xs">
+              <div class="bg-slate-800/80 text-slate-200 p-3 rounded-2xl rounded-tl-none max-w-xs">
+                Namaste! 🙏 Apna udhaar, doodh order, ya kaam ki jaankari bolkar ya likhkar bhejein.
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <input id="waSimInput" type="text" onkeydown="if(event.key==='Enter') sendWhatsAppSim()" placeholder="Send WhatsApp msg (e.g., Mohan ke 50 udhaar)" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500" />
+              <button onclick="sendWhatsAppSim()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer">Send</button>
+            </div>
+          </div>
+
+          <div class="card rounded-3xl p-6 space-y-4 border-orange-500/25">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-2.5">
+                <span class="w-3 h-3 rounded-full bg-orange-400 animate-ping"></span>
+                <h4 class="text-sm font-extrabold text-white">Free Phone Call Line (1800-120-VANI)</h4>
+              </div>
+              <span class="text-[11px] text-orange-400 font-semibold">Keypad Phone Ready</span>
+            </div>
+            <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-5 text-center space-y-4">
+              <p class="text-xs text-slate-400">Daily-wage workers & vendors without internet simply dial the free number and speak in Hindi/Bengali:</p>
+              <div class="grid grid-cols-1 gap-2.5 text-left">
+                <button onclick="triggerIVRCall('Main Raju welder bol raha hoon, kal ke liye factory kaam chahiye')" class="p-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-200 cursor-pointer">
+                  📞 Test Worker Call: <em>"Main Raju welder bol raha hoon, kal kaam chahiye"</em>
+                </button>
+                <button onclick="triggerIVRCall('Kal subah 15 packet doodh aur 3 kilo cheeni bhej dena')" class="p-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-200 cursor-pointer">
+                  📞 Test Chaiwala Call: <em>"Kal subah 15 packet doodh aur 3 kilo cheeni bhej dena"</em>
+                </button>
+              </div>
+              <p id="ivrStatus" class="text-xs font-semibold text-emerald-400">Ready for incoming free voice call...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    let appState = {
+      collected: 1420,
+      udhaar: [
+        { id: 1, name: "Suresh (Auto Driver)", items: "4 Masala Chai + 2 Bun Maska", amount: 60, status: "Pending", created_at: "09:20 AM" },
+        { id: 2, name: "Anil Sharma", items: "6 Special Chai + Samosa", amount: 120, status: "Pending", created_at: "11:45 AM" },
+        { id: 3, name: "Deepak (Electrician)", items: "3 Chai + Biscuit", amount: 65, status: "Pending", created_at: "02:15 PM" }
+      ],
+      orders: [
+        { id: 1, item: "Assam CTC Tea Leaves", qty: "5 kg", vendor: "Sharma Wholesale Traders", status: "Sent", created_at: "08:30 AM" },
+        { id: 2, item: "Disposable Kulhad Cups", qty: "500 pcs", vendor: "Kolkata Packaging Co.", status: "Sent", created_at: "10:10 AM" }
+      ],
+      shifts: [
+        { id: 1, staff: "Chotu (Tea Master)", task: "Morning Rush & Milk Prep", shift_time: "07:00 AM – 02:00 PM", status: "Active" },
+        { id: 2, staff: "Raju (Counter Helper)", task: "Parcel Packing & Counter", shift_time: "02:00 PM – 09:00 PM", status: "Scheduled" }
+      ],
+      labor: [
+        { id: 1, worker: "Manoj Kumar", trade: "Arc & MIG Welder", skill_score: "96% Skill Verified", factory: "Shree Balaji Fabrication Works", distance: "2.4 km", wage: 850, escrow_locked: 1, map_url: "https://maps.google.com/?q=Industrial+Estate+Kolkata" },
+        { id: 2, worker: "Subhash Mondal", trade: "Industrial Electrician", skill_score: "94% Voice Verified", factory: "Panihati Polymers Ltd.", distance: "3.8 km", wage: 900, escrow_locked: 1, map_url: "https://maps.google.com/?q=Panihati+Industrial+Area" },
+        { id: 3, worker: "Farhan Ali", trade: "Civil Mason (Rajmistri)", skill_score: "91% Skill Verified", factory: "Metro Warehouse Extension", distance: "4.5 km", wage: 800, escrow_locked: 0, map_url: "https://maps.google.com/?q=Barrackpore+Trunk+Road" }
+      ]
+    };
+    let selectedId = 1;
+    let clipReady = false;
+
+    async function loadState() {
+      try {
+        const res = await fetch("/api/state");
+        if (res.ok) {
+          appState = await res.json();
+          const firstPending = appState.udhaar.find(u => u.status === "Pending");
+          if (firstPending) selectedId = firstPending.id;
+        }
+      } catch (e) {}
+      renderAll();
+    }
+
+    function showPage(page) {
+      ["voice", "udhaar", "stock", "labor", "channels"].forEach(p => {
+        document.getElementById(`page-${p}`).classList.toggle("hidden", p !== page);
+        const btn = document.getElementById(`nav-${p}`);
+        btn.className = p === page
+          ? "w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold bg-gradient-to-r from-orange-500/20 to-amber-500/10 text-orange-400 border border-orange-500/30 transition cursor-pointer"
+          : "w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold text-slate-400 hover:bg-slate-900 hover:text-white transition cursor-pointer";
+      });
+      const titles = {
+        voice: ["Bolkar Hisaab Likhein", "Zero English typing — speak in Hindi, Bengali, or Hinglish"],
+        udhaar: ["Udhaar Khata & Evening UPI", "Polite evening payment reminders & instant QR settlement"],
+        stock: ["Morning Supplies & Team Shifts", "Automated morning dairy restock & easy shift board"],
+        labor: ["ShramikSetu — 5 km Kaam Bridge", "Skill verification, safe wage lock & factory location"],
+        channels: ["WhatsApp & Free Phone Call", "Works on basic smartphones and keypad phones without internet"]
+      };
+      document.getElementById("pageHeading").innerText = titles[page][0];
+      document.getElementById("pageSubheading").innerText = titles[page][1];
+      renderAll();
+    }
+
+    function speak(txt) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(txt);
+        u.lang = 'hi-IN';
+        u.rate = 1.05;
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    async function sendCommandToBackend(text, channel = "Voice") {
+      try {
+        const res = await fetch("/api/command", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, channel })
+        });
+        const data = await res.json();
+        appState = data.state;
+        const latestPending = appState.udhaar.find(u => u.status === "Pending");
+        if (latestPending) selectedId = latestPending.id;
+        renderAll();
+        document.getElementById("feedbackMsg").innerText = data.reply;
+        document.getElementById("feedbackBanner").classList.remove("hidden");
+        speak(data.reply);
+        return data.reply;
+      } catch (e) {
+        alert("Please start the server first: py -m uvicorn server:app --reload");
+      }
+    }
+
+    function runManualInput() {
+      const el = document.getElementById("cmdInput");
+      if (!el.value.trim()) return;
+      sendCommandToBackend(el.value.trim(), "Voice");
+      el.value = "";
+    }
+
+    function runSample(txt) {
+      document.getElementById("cmdInput").value = txt;
+      sendCommandToBackend(txt, "Voice");
+    }
+
+    let rec = null, isRec = false, finalTranscript = "";
+    function toggleVoice() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        alert("Please use Google Chrome or Microsoft Edge for live voice recognition.");
+        return;
+      }
+      if (!rec) {
+        rec = new SR();
+        rec.continuous = false;
+        rec.interimResults = true;
+
+        rec.onstart = () => {
+          finalTranscript = "";
+          document.getElementById("cmdInput").placeholder = "🎙️ Boliyega... Sun raha hoon...";
+        };
+
+        rec.onresult = (e) => {
+          let interim = "";
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            const transcript = e.results[i][0].transcript;
+            if (e.results[i].isFinal) {
+              finalTranscript += transcript;
+            } else {
+              interim += transcript;
+            }
+          }
+          document.getElementById("cmdInput").value = finalTranscript || interim;
+        };
+
+        rec.onerror = (e) => {
+          isRec = false;
+          document.getElementById("micBtn").classList.remove("mic-listening");
+          document.getElementById("micLabel").innerHTML = "Bolkar<br>Likhein";
+          document.getElementById("feedbackMsg").innerText =
+            e.error === "not-allowed"
+              ? "Mic permission blocked! Click the lock icon in Chrome address bar and Allow Microphone."
+              : "Voice clear nahi sunai di — dobara tap karke bolein.";
+          document.getElementById("feedbackBanner").classList.remove("hidden");
+        };
+
+        rec.onend = () => {
+          isRec = false;
+          document.getElementById("micBtn").classList.remove("mic-listening");
+          document.getElementById("micLabel").innerHTML = "Bolkar<br>Likhein";
+          document.getElementById("cmdInput").placeholder = "Speak or type in Hindi / Bengali / Hinglish...";
+          const spoken = document.getElementById("cmdInput").value.trim();
+          if (spoken) {
+            sendCommandToBackend(spoken, "Voice");
+            document.getElementById("cmdInput").value = "";
+          }
+        };
+      }
+
+      rec.lang = document.getElementById("langSelect").value;
+      if (!isRec) {
+        isRec = true;
+        document.getElementById("micBtn").classList.add("mic-listening");
+        document.getElementById("micLabel").innerHTML = "Sun Raha<br>Hoon...";
+        rec.start();
+      } else {
+        rec.stop();
+      }
+    }
+
+    function selectCustomer(id) {
+      selectedId = id;
+      renderUdhaarPage();
+    }
+
+    async function markCurrentPaid() {
+      if (!selectedId) return;
+      const res = await fetch(`/api/udhaar/${selectedId}/settle`, { method: "POST" });
+      const data = await res.json();
+      appState = data.state;
+      renderAll();
+      speak("पेमेंट सेटल कर दिया गया है।");
+    }
+
+    function bulkEveningReminder() {
+      const count = appState.udhaar.filter(u => u.status === "Pending").length;
+      showPage("voice");
+      const msg = `सभी ${count} ग्राहकों को शाम का विनम्र UPI पेमेंट लिंक WhatsApp पर भेज दिया गया है।`;
+      document.getElementById("feedbackMsg").innerText = msg;
+      document.getElementById("feedbackBanner").classList.remove("hidden");
+      speak(msg);
+    }
+
+    function onClipAttach(inp) {
+      if (inp.files && inp.files[0]) {
+        clipReady = true;
+        document.getElementById("clipLabel").innerText = `✅ Work Video Ready: ${inp.files[0].name}`;
+        document.getElementById("clipLabel").className = "text-xs text-emerald-400 font-bold";
+      }
+    }
+
+    async function addWorkerMatch() {
+      const worker = document.getElementById("wName").value.trim() || "Raju Paswan";
+      const trade = document.getElementById("wTrade").value;
+      const res = await fetch("/api/labor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ worker, trade, has_video: clipReady })
+      });
+      const data = await res.json();
+      appState = data.state;
+      document.getElementById("wName").value = "";
+      renderAll();
+      speak(`${worker} का काम पक्का हो गया है और फैक्ट्री लोकेशन व ₹950 मजदूरी सुरक्षित लॉक कर दी गई है।`);
+    }
+
+    async function toggleLock(id) {
+      const res = await fetch(`/api/labor/${id}/toggle_escrow`, { method: "POST" });
+      const data = await res.json();
+      appState = data.state;
+      renderAll();
+    }
+
+    async function sendWhatsAppSim() {
+      const inp = document.getElementById("waSimInput");
+      const msg = inp.value.trim();
+      if (!msg) return;
+      inp.value = "";
+      const log = document.getElementById("waChatLog");
+      log.innerHTML += `<div class="bg-emerald-600/30 border border-emerald-500/30 text-white p-3 rounded-2xl rounded-tr-none ml-auto max-w-xs">${msg}</div>`;
+      const reply = await sendCommandToBackend(msg, "WhatsApp");
+      log.innerHTML += `<div class="bg-slate-800/80 text-emerald-300 p-3 rounded-2xl rounded-tl-none max-w-xs">✅ ${reply}</div>`;
+      log.scrollTop = log.scrollHeight;
+    }
+
+    async function triggerIVRCall(spokenText) {
+      document.getElementById("ivrStatus").innerText = `📞 Active Call: "${spokenText}"...`;
+      if (spokenText.toLowerCase().includes("welder") || spokenText.toLowerCase().includes("kaam")) {
+        const res = await fetch("/api/labor", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ worker: "Raju (Phone Caller)", trade: "Arc & MIG Welder", has_video: false })
+        });
+        const data = await res.json();
+        appState = data.state;
+        renderAll();
+        const r = "Raju ji, aapka kaam 1.9 km door Bengal Precision Engineering mein pakka ho gaya hai aur ₹950 majduri surakshit lock hai.";
+        document.getElementById("ivrStatus").innerText = `✅ Call Reply: ${r}`;
+        speak(r);
+      } else {
+        const r = await sendCommandToBackend(spokenText, "Call");
+        document.getElementById("ivrStatus").innerText = `✅ Call Reply: ${r}`;
+      }
+    }
+
+    function renderUdhaarPage() {
+      const q = (document.getElementById("searchBox")?.value || "").toLowerCase();
+      const rows = appState.udhaar.filter(u => u.name.toLowerCase().includes(q));
+      document.getElementById("udhaarTable").innerHTML = rows.map(u => `
+        <tr onclick="selectCustomer(${u.id})" class="hover:bg-slate-800/40 cursor-pointer transition ${u.id === selectedId ? 'bg-orange-500/10' : ''}">
+          <td class="py-3.5 px-3 font-bold text-white">${u.name}<div class="text-[11px] text-slate-500 font-normal">${u.created_at}</div></td>
+          <td class="py-3.5 px-3 text-xs text-slate-300">${u.items}</td>
+          <td class="py-3.5 px-3 font-extrabold text-orange-400">₹${u.amount}</td>
+          <td class="py-3.5 px-3">
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${u.status === 'Pending' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'}">${u.status}</span>
+          </td>
+          <td class="py-3.5 px-3 text-right text-xs font-bold text-orange-400">UPI QR →</td>
+        </tr>
+      `).join("");
+
+      const pending = appState.udhaar.filter(u => u.status === "Pending");
+      const target = pending.find(u => u.id === selectedId) || pending[0];
+      const qrBox = document.getElementById("qrBox");
+      qrBox.innerHTML = "";
+      if (!target) {
+        document.getElementById("qrDueBadge").innerText = "All Settled";
+        document.getElementById("qrCustName").innerText = "Zero Pending Udhaar";
+        document.getElementById("waText").value = "सभी ग्राहकों का उधार हिसाब क्लियर है।";
+        return;
+      }
+      selectedId = target.id;
+      document.getElementById("qrDueBadge").innerText = `₹${target.amount} Due`;
+      document.getElementById("qrCustName").innerText = `${target.name} — ₹${target.amount}`;
+      const upi = `upi://pay?pa=vanikhata.stall@okicici&pn=Maa%20Tara%20Tea%20Stall&am=${target.amount}&cu=INR`;
+      new QRCode(qrBox, { text: upi, width: 130, height: 130 });
+      const msg = `Namaste ${target.name} ji, Maa Tara Tea & Kirana par aapka ₹${target.amount} (${target.items}) udhaar pending hai. Kripya is UPI link se payment karein: ${upi}`;
+      document.getElementById("waText").value = msg;
+      document.getElementById("waBtn").href = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    }
+
+    function renderAll() {
+      const pending = appState.udhaar.filter(u => u.status === "Pending");
+      const sum = pending.reduce((a, b) => a + b.amount, 0);
+
+      document.getElementById("statCollected").innerText = `₹${appState.collected.toLocaleString('en-IN')}`;
+      document.getElementById("statPending").innerText = `₹${sum.toLocaleString('en-IN')}`;
+      document.getElementById("statPendingSub").innerText = `${pending.length} customers • Click to collect →`;
+      document.getElementById("statOrders").innerText = `${appState.orders.length} Orders`;
+      document.getElementById("badgePending").innerText = pending.length;
+      document.getElementById("badgeOrders").innerText = appState.orders.length;
+
+      document.getElementById("recentFeed").innerHTML = appState.udhaar.slice(0, 3).map(u => `
+        <div onclick="showPage('udhaar'); selectCustomer(${u.id})" class="bg-slate-950/80 hover:bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition">
+          <div>
+            <p class="text-sm font-bold text-white">${u.name}</p>
+            <p class="text-xs text-slate-400">${u.items} • ${u.created_at}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-extrabold text-orange-400">₹${u.amount}</p>
+            <span class="text-[10px] font-bold ${u.status === 'Pending' ? 'text-amber-400' : 'text-emerald-400'}">${u.status}</span>
+          </div>
+        </div>
+      `).join("");
+
+      document.getElementById("ordersContainer").innerHTML = appState.orders.map(o => `
+        <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-2">
+          <div>
+            <p class="text-sm font-bold text-white">${o.qty} • ${o.item}</p>
+            <p class="text-xs text-slate-400">${o.vendor} • ${o.created_at}</p>
+          </div>
+          <a href="https://wa.me/?text=${encodeURIComponent('Morning Order: ' + o.qty + ' ' + o.item)}" target="_blank" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">${o.status} ↗</a>
+        </div>
+      `).join("");
+
+      document.getElementById("teamContainer").innerHTML = appState.shifts.map(t => `
+        <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-2">
+          <div>
+            <p class="text-sm font-bold text-white">${t.staff}</p>
+            <p class="text-xs text-slate-400">${t.task} • ${t.shift_time}</p>
+          </div>
+          <span class="text-xs font-bold px-3 py-1 rounded-xl bg-blue-500/15 text-blue-300 border border-blue-500/30">${t.status}</span>
+        </div>
+      `).join("");
+
+      document.getElementById("laborCards").innerHTML = appState.labor.map(m => `
+        <div class="card rounded-3xl p-6 flex flex-col justify-between space-y-4">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-blue-500/15 text-blue-300 border border-blue-500/30">${m.skill_score}</span>
+              <span class="text-xs font-semibold text-slate-400">📍 ${m.distance}</span>
+            </div>
+            <h4 class="text-lg font-extrabold text-white pt-1">${m.worker}</h4>
+            <p class="text-xs font-bold text-orange-400">${m.trade}</p>
+            <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-3.5 mt-2 space-y-2">
+              <p class="text-[11px] text-slate-400">Matched Factory (Within 5 km)</p>
+              <p class="text-sm font-bold text-white">${m.factory}</p>
+              <a href="https://wa.me/?text=${encodeURIComponent('Namaste ' + m.worker + ', aapko ' + m.factory + ' (' + m.distance + ') par ₹' + m.wage + '/day ka kaam mila hai. Location: ' + m.map_url)}" target="_blank" class="inline-block text-xs font-bold text-blue-400 hover:underline">
+                📍 Send Factory Location on WhatsApp ↗
+              </a>
+            </div>
+          </div>
+          <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+            <div>
+              <p class="text-[11px] text-slate-400">Guaranteed Wage</p>
+              <p class="text-lg font-extrabold text-emerald-400">₹${m.wage}/day</p>
+            </div>
+            <button onclick="toggleLock(${m.id})" class="px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${m.escrow_locked ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/40' : 'bg-orange-500 text-white'}">
+              ${m.escrow_locked ? '🔒 Wage Safe & Locked' : 'Lock Daily Wage'}
+            </button>
+          </div>
+        </div>
+      `).join("");
+
+      renderUdhaarPage();
+    }
+
+    function exportCSV() {
+      const rows = [["Customer", "Items", "Amount", "Status", "Time"], ...appState.udhaar.map(u => [u.name, u.items, u.amount, u.status, u.created_at])];
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([rows.map(r => r.join(",")).join("\n")], { type: "text/csv" }));
+      a.download = "VaniKhata_Daily_Hisaab.csv";
+      a.click();
+    }
+
+    renderAll();
+    loadState();
+  </script>
+</body>
+</html>
