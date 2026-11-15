@@ -1,6 +1,8 @@
+import os
 import re
 import sqlite3
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,7 +18,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-conn = sqlite3.connect("vanikhata.db", check_same_thread=False)
+BASE_DIR = Path(__file__).resolve().parent
+DB_PATH = "/tmp/vanikhata.db" if os.getenv("VERCEL") else str(BASE_DIR / "vanikhata.db")
+
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 conn.row_factory = sqlite3.Row
 cur = conn.cursor()
 
@@ -61,38 +66,43 @@ CREATE TABLE IF NOT EXISTS labor_matches (
 """)
 conn.commit()
 
-if cur.execute("SELECT COUNT(*) FROM udhaar").fetchone()[0] == 0:
-    cur.executemany(
-        "INSERT INTO udhaar (name, items, amount, status, created_at) VALUES (?, ?, ?, ?, ?)",
-        [
-            ("Suresh (Auto Driver)", "4 Masala Chai + 2 Bun Maska", 60, "Pending", "09:20 AM"),
-            ("Anil Sharma", "6 Special Chai + Samosa", 120, "Pending", "11:45 AM"),
-            ("Deepak (Electrician)", "3 Chai + Biscuit", 65, "Pending", "02:15 PM"),
-        ],
-    )
-    cur.executemany(
-        "INSERT INTO supplier_orders (item, qty, vendor, status, created_at) VALUES (?, ?, ?, ?, ?)",
-        [
-            ("Assam CTC Tea Leaves", "5 kg", "Sharma Wholesale Traders", "Dispatched", "08:30 AM"),
-            ("Disposable Kulhad Cups", "500 pcs", "Kolkata Packaging Co.", "Dispatched", "10:10 AM"),
-        ],
-    )
-    cur.executemany(
-        "INSERT INTO team_shifts (staff, task, shift_time, status) VALUES (?, ?, ?, ?)",
-        [
-            ("Chotu (Tea Master)", "Morning Rush & Milk Prep", "07:00 AM – 02:00 PM", "Active"),
-            ("Raju (Counter Helper)", "Parcel Packing & Counter", "02:00 PM – 09:00 PM", "Scheduled"),
-        ],
-    )
-    cur.executemany(
-        "INSERT INTO labor_matches (worker, trade, skill_score, factory, distance, wage, escrow_locked, map_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        [
-            ("Manoj Kumar", "Arc & MIG Welder", "96% Clip Verified", "Shree Balaji Fabrication Works", "2.4 km", 850, 1, "https://maps.google.com/?q=Industrial+Estate+Kolkata"),
-            ("Subhash Mondal", "Industrial Electrician", "94% Voice Verified", "Panihati Polymers Ltd.", "3.8 km", 900, 1, "https://maps.google.com/?q=Panihati+Industrial+Area"),
-            ("Farhan Ali", "Civil Mason (Rajmistri)", "91% Clip Verified", "Metro Warehouse Extension", "4.5 km", 800, 0, "https://maps.google.com/?q=Barrackpore+Trunk+Road"),
-        ],
-    )
-    conn.commit()
+
+def ensure_seeded():
+    if cur.execute("SELECT COUNT(*) FROM udhaar").fetchone()[0] == 0:
+        cur.executemany(
+            "INSERT INTO udhaar (name, items, amount, status, created_at) VALUES (?, ?, ?, ?, ?)",
+            [
+                ("Suresh (Auto Driver)", "4 Masala Chai + 2 Bun Maska", 60, "Pending", "09:20 AM"),
+                ("Anil Sharma", "6 Special Chai + Samosa", 120, "Pending", "11:45 AM"),
+                ("Deepak (Electrician)", "3 Chai + Biscuit", 65, "Pending", "02:15 PM"),
+            ],
+        )
+        cur.executemany(
+            "INSERT INTO supplier_orders (item, qty, vendor, status, created_at) VALUES (?, ?, ?, ?, ?)",
+            [
+                ("Assam CTC Tea Leaves", "5 kg", "Sharma Wholesale Traders", "Dispatched", "08:30 AM"),
+                ("Disposable Kulhad Cups", "500 pcs", "Kolkata Packaging Co.", "Dispatched", "10:10 AM"),
+            ],
+        )
+        cur.executemany(
+            "INSERT INTO team_shifts (staff, task, shift_time, status) VALUES (?, ?, ?, ?)",
+            [
+                ("Chotu (Tea Master)", "Morning Rush & Milk Prep", "07:00 AM – 02:00 PM", "Active"),
+                ("Raju (Counter Helper)", "Parcel Packing & Counter", "02:00 PM – 09:00 PM", "Scheduled"),
+            ],
+        )
+        cur.executemany(
+            "INSERT INTO labor_matches (worker, trade, skill_score, factory, distance, wage, escrow_locked, map_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                ("Manoj Kumar", "Arc & MIG Welder", "96% Skill Verified", "Shree Balaji Fabrication Works", "2.4 km", 850, 1, "https://maps.google.com/?q=Industrial+Estate+Kolkata"),
+                ("Subhash Mondal", "Industrial Electrician", "94% Voice Verified", "Panihati Polymers Ltd.", "3.8 km", 900, 1, "https://maps.google.com/?q=Panihati+Industrial+Area"),
+                ("Farhan Ali", "Civil Mason (Rajmistri)", "91% Skill Verified", "Metro Warehouse Extension", "4.5 km", 800, 0, "https://maps.google.com/?q=Barrackpore+Trunk+Road"),
+            ],
+        )
+        conn.commit()
+
+
+ensure_seeded()
 
 
 class CommandRequest(BaseModel):
@@ -113,18 +123,19 @@ def now_str() -> str:
 def normalize_digits(text: str) -> str:
     for idx, ch in enumerate("०१२३४५६७८९"):
         text = text.replace(ch, str(idx))
-    for idx, ch in enumerate("০১২৩৪৫६৭৮৯"):
+    for idx, ch in enumerate("০১২৩৪৫६७८৯"):
         text = text.replace(ch, str(idx))
     return text
 
 
 @app.get("/")
 def serve_home():
-    return FileResponse("index.html")
+    return FileResponse(str(BASE_DIR / "index.html"))
 
 
 @app.get("/api/state")
 def get_state():
+    ensure_seeded()
     udhaar_rows = [dict(r) for r in cur.execute("SELECT * FROM udhaar ORDER BY id DESC").fetchall()]
     order_rows = [dict(r) for r in cur.execute("SELECT * FROM supplier_orders ORDER BY id DESC").fetchall()]
     shift_rows = [dict(r) for r in cur.execute("SELECT * FROM team_shifts ORDER BY id DESC").fetchall()]
@@ -141,6 +152,7 @@ def get_state():
 
 @app.post("/api/command")
 def process_command(req: CommandRequest):
+    ensure_seeded()
     raw = req.text.strip()
     norm = normalize_digits(raw)
     lower = norm.lower()
@@ -217,6 +229,7 @@ def process_command(req: CommandRequest):
 
 @app.post("/api/udhaar/{entry_id}/settle")
 def settle_udhaar(entry_id: int):
+    ensure_seeded()
     cur.execute("UPDATE udhaar SET status = 'Paid' WHERE id = ?", (entry_id,))
     conn.commit()
     return {"status": "ok", "state": get_state()}
@@ -224,7 +237,8 @@ def settle_udhaar(entry_id: int):
 
 @app.post("/api/labor")
 def add_labor(req: WorkerRequest):
-    score = "98% Video Clip Verified" if req.has_video else "94% Voice Dial Verified"
+    ensure_seeded()
+    score = "98% Skill Verified" if req.has_video else "94% Voice Verified"
     cur.execute(
         "INSERT INTO labor_matches (worker, trade, skill_score, factory, distance, wage, escrow_locked, map_url) VALUES (?, ?, ?, ?, ?, ?, 1, ?)",
         (
@@ -243,6 +257,7 @@ def add_labor(req: WorkerRequest):
 
 @app.post("/api/labor/{labor_id}/toggle_escrow")
 def toggle_escrow(labor_id: int):
+    ensure_seeded()
     row = cur.execute("SELECT escrow_locked FROM labor_matches WHERE id = ?", (labor_id,)).fetchone()
     if row:
         new_val = 0 if row["escrow_locked"] == 1 else 1
