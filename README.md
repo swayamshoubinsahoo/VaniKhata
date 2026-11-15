@@ -9,7 +9,7 @@
 
 * **🌐 Live Deployed App (Vercel):** [https://vanikhata.vercel.app](https://vanikhata.vercel.app)
 * **💻 GitHub Repository:** [https://github.com/swayamshoubinsahoo/VaniKhata](https://github.com/swayamshoubinsahoo/VaniKhata)
-* **🎥 2:30 Live Demo Video:** `[PASTE_YOUR_YOUTUBE_DEMO_LINK_HERE]`
+* **🎥 Demo Video:** [https://youtu.be/PAjKNNApwkI](https://youtu.be/PAjKNNApwkI)
 
 ---
 
